@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заработки Курьера</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #18222d);
+            --card-color: var(--tg-theme-secondary-bg-color, #2b5278);
+            --text-color: var(--tg-theme-text-color, #ffffff);
+            --hint-color: var(--tg-theme-hint-color, #aaaaaa);
+            --accent-color: var(--tg-theme-button-color, #3d8df5);
+            --danger-color: #f55d3d;
+            --success-color: #4caf50;
+            --border-radius: 12px;
+            --transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            padding-top: 134px;
+            padding-bottom: 71px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.modal-open {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .spacer-top {
+            height: 70px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 101;
+            background-color: var(--bg-color);
+        }
+
+        .top-panel {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            padding: 12px 16px;
+            background-color: var(--bg-color);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            height: 52px;
+        }
+
+        .goal-info {
+            font-size: 13px;
+            color: var(--hint-color);
+        }
+
+        .goal-amount {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .add-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .add-btn:active {
+            transform: scale(0.92);
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card-wide {
+            grid-column: 1 / -1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--hint-color);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .stat-value.success {
+            color: var(--success-color);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+
+        .firms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .firm-card {
+            background-color: var(--card-color);
+            padding: 12px 14px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .firm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .firm-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .firm-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .firm-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--hint-color);
+        }
+
+        .entries-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .entry-wrapper {
+            position: relative;
+            overflow: visible;
+        }
+
+        .swipe-delete-bg {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background-color: var(--danger-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            z-index: 1;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .entry-card {
+            background-color: var(--card-color);
+            padding: 12px 14px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            z-index: 2;
+            touch-action: pan-y;
+        }
+
+        .entry-card:active {
+            transform: scale(0.98);
+        }
+
+        .entry-wrapper.swiping .entry-card {
+            transform: translateX(-80px);
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .entry-firm {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .entry-amount {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .entry-details {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--hint-color);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--card-color);
+            width: calc(100% - 32px);
+            max-width: 400px;
+            max-height: calc(100vh - 32px);
+            border-radius: var(--border-radius);
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--hint-color);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            border: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-size: 15px;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-hint {
+            display: block;
+            font-size: 11px;
+            color: var(--hint-color);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .save-button {
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 80px;
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .cancel-button {
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 80px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+
+        .save-button:active,
+        .cancel-button:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .delete-button {
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 80px;
+            background-color: var(--danger-color);
+            color: white;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .delete-button:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--hint-color);
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-color);
+            color: var(--text-color);
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            display: none;
+            z-index: 1000;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .toast.active {
+            display: block;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card-color);
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--hint-color);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            height: 47px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .storage-usage {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="spacer-top"></div>
+    
+    <div class="top-panel">
+        <div class="goal-info">
+            Цель: <span class="goal-amount" id="goalDisplay">Не установлена</span>
+        </div>
+        <button class="add-btn" id="addBtn">+</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Заработано</div>
+            <div class="stat-value success" id="totalEarned">0 zł</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Прогресс</div>
+            <div class="stat-value" id="progress">0%</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Средняя ставка</div>
+            <div class="stat-value" id="avgRate">0 zł/ч</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Отработано</div>
+            <div class="stat-value" id="totalHours">0ч</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Осталось заработать</div>
+            <div class="stat-value" id="remaining">0 zł</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Дней до конца месяца</div>
+            <div class="stat-value" id="daysLeft">0</div>
+        </div>
+        <div class="stat-card stat-card-wide">
+            <div class="stat-label">Нужно в день</div>
+            <div class="stat-value" id="dailyTarget">0 zł/день</div>
+        </div>
+    </div>
+
+    <div class="section-title">🏆 Топ Компании</div>
+    <div class="firms-list" id="firmsList"></div>
+
+    <div class="section-title">📋 Все записи</div>
+    <div class="entries-list" id="entriesList"></div>
+
+    <!-- Entry Modal -->
+    <div class="modal" id="entryModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Добавить запись</h2>
+            <form id="entryForm">
+                <div class="form-group">
+                    <label>Компания*</label>
+                    <input type="text" id="firmInput" placeholder="напр. Glovo, Uber Eats" required>
+                </div>
+                <div class="form-group">
+                    <label>Заработано (zł)*</label>
+                    <input type="number" step="0.01" id="amountInput" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Время работы*</label>
+                    <div class="time-inputs">
+                        <input type="number" id="hoursInput" placeholder="Часы" min="0" required>
+                        <input type="number" id="minutesInput" placeholder="Минуты" min="0" max="59" required>
+                    </div>
+                    <span class="form-hint">Можно указать часы и минуты</span>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-button" id="cancelBtn">Отмена</button>
+                    <button type="submit" class="save-button">Сохранить</button>
+                </div>
+                <button type="button" class="delete-button" id="deleteBtn" style="display: none;">Удалить запись</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div class="modal" id="goalModal">
+        <div class="modal-content">
+            <h2>Установить цель</h2>
+            <form id="goalForm">
+                <div class="form-group">
+                    <label>Цель на месяц (zł)*</label>
+                    <input type="number" step="0.01" id="goalInput" placeholder="10000" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-button" id="cancelGoalBtn">Отмена</button>
+                    <button type="submit" class="save-button">Установить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="footer">
+        <div class="storage-usage" id="storageUsage">0% 0b/4096b</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+        tg.BackButton.hide();
+
+        // Adjust spacing for Telegram header
+        const headerOffset = tg.headerColor ? 10 : 0;
+        if (headerOffset > 0) {
+            const spacer = document.querySelector('.spacer-top');
+            if (spacer) spacer.style.height = `${70 + headerOffset}px`;
+            document.body.style.paddingTop = `${134 + headerOffset}px`;
+            const topPanel = document.querySelector('.top-panel');
+            if (topPanel) topPanel.style.top = `${70 + headerOffset}px`;
+        }
+
+        const STORAGE_KEY = 'courierEarningsData';
+        
+        let data = {
+            goal: 0,
+            entries: []
+        };
+
+        let currentEditId = null;
+        let swipeStartX = 0;
+        let swipeElement = null;
+
+        // DOM Elements
+        const addBtn = document.getElementById('addBtn');
+        const entryModal = document.getElementById('entryModal');
+        const goalModal = document.getElementById('goalModal');
+        const entryForm = document.getElementById('entryForm');
+        const goalForm = document.getElementById('goalForm');
+        const toast = document.getElementById('toast');
+
+        // Parse time input
+        function parseTimeInput(hours, minutes) {
+            const h = parseInt(hours) || 0;
+            const m = parseInt(minutes) || 0;
+            return h + (m / 60);
+        }
+
+        // Format hours
+        function formatHours(hours) {
+            const h = Math.floor(hours);
+            const m = Math.round((hours - h) * 60);
+            if (h === 0 && m === 0) return '0ч';
+            if (h === 0) return `${m}м`;
+            if (m === 0) return `${h}ч`;
+            return `${h}ч ${m}м`;
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) return 'Сегодня';
+            if (diffDays === 1) return 'Вчера';
+            if (diffDays < 7) return `${diffDays} дн. назад`;
+            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        }
+
+        // Show toast
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
+
+        // Update storage usage
+        function updateStorageUsage() {
+            tg.CloudStorage.getItem(STORAGE_KEY, (err, stored) => {
+                let usedBytes = 0;
+                if (!err && stored) {
+                    usedBytes = new TextEncoder().encode(stored).length;
+                }
+                const totalBytes = 4096;
+                const percentage = Math.round((usedBytes / totalBytes) * 100);
+                document.getElementById('storageUsage').textContent = `${percentage}% ${usedBytes}b/${totalBytes}b`;
+            });
+        }
+
+        // Load data
+        function loadData() {
+            tg.CloudStorage.getItem(STORAGE_KEY, (err, stored) => {
+                if (!err && stored) {
+                    try {
+                        data = JSON.parse(stored);
+                    } catch (e) {
+                        console.error('Error parsing data:', e);
+                    }
+                }
+                renderAll();
+                updateStorageUsage();
+            });
+        }
+
+        // Save data
+        function saveData() {
+            const jsonData = JSON.stringify(data);
+            tg.CloudStorage.setItem(STORAGE_KEY, jsonData, () => {
+                renderAll();
+                updateStorageUsage();
+            });
+        }
+
+        // Calculate stats
+        function calculateStats() {
+            const totalEarned = data.entries.reduce((sum, e) => sum + e.amount, 0);
+            const totalHours = data.entries.reduce((sum, e) => sum + e.hours, 0);
+            const avgRate = totalHours > 0 ? totalEarned / totalHours : 0;
+            const progress = data.goal > 0 ? (totalEarned / data.goal) * 100 : 0;
+            const remaining = Math.max(data.goal - totalEarned, 0);
+
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const daysLeft = Math.max(lastDay.getDate() - now.getDate() + 1, 1);
+            const dailyTarget = daysLeft > 0 ? remaining / daysLeft : 0;
+
+            const firmStats = {};
+            data.entries.forEach(entry => {
+                if (!firmStats[entry.firm]) {
+                    firmStats[entry.firm] = { amount: 0, hours: 0 };
+                }
+                firmStats[entry.firm].amount += entry.amount;
+                firmStats[entry.firm].hours += entry.hours;
+            });
+
+            const topFirms = Object.entries(firmStats)
+                .map(([firm, stats]) => ({
+                    firm,
+                    amount: stats.amount,
+                    hours: stats.hours,
+                    rate: stats.hours > 0 ? stats.amount / stats.hours : 0
+                }))
+                .sort((a, b) => b.amount - a.amount);
+
+            return { totalEarned, totalHours, avgRate, progress, remaining, daysLeft, dailyTarget, topFirms };
+        }
+
+        // Render all
+        function renderAll() {
+            const stats = calculateStats();
+
+            // Update goal display
+            document.getElementById('goalDisplay').textContent = data.goal > 0 ? `${data.goal.toFixed(2)} zł` : 'Не установлена';
+            if (data.goal === 0) {
+                document.getElementById('goalDisplay').onclick = () => openGoalModal();
+                document.getElementById('goalDisplay').style.cursor = 'pointer';
+                document.getElementById('goalDisplay').style.textDecoration = 'underline';
+            }
+
+            // Update stats
+            document.getElementById('totalEarned').textContent = `${stats.totalEarned.toFixed(2)} zł`;
+            document.getElementById('progress').textContent = `${stats.progress.toFixed(1)}%`;
+            document.getElementById('avgRate').textContent = `${stats.avgRate.toFixed(2)} zł/ч`;
+            document.getElementById('totalHours').textContent = formatHours(stats.totalHours);
+            document.getElementById('remaining').textContent = `${stats.remaining.toFixed(2)} zł`;
+            document.getElementById('daysLeft').textContent = stats.daysLeft;
+            document.getElementById('dailyTarget').textContent = `${stats.dailyTarget.toFixed(2)} zł/день`;
+
+            // Render top firms
+            const firmsList = document.getElementById('firmsList');
+            if (stats.topFirms.length === 0) {
+                firmsList.innerHTML = '<div class="empty-state">Нет данных о компаниях</div>';
+            } else {
+                firmsList.innerHTML = stats.topFirms.slice(0, 5).map(firm => `
+                    <div class="firm-card">
+                        <div class="firm-header">
+                            <div class="firm-name">${escapeHtml(firm.firm)}</div>
+                            <div class="firm-amount">${firm.amount.toFixed(2)} zł</div>
+                        </div>
+                        <div class="firm-stats">
+                            <span>⏱️ ${formatHours(firm.hours)}</span>
+                            <span>💵 ${firm.rate.toFixed(2)} zł/ч</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render entries
+            const entriesList = document.getElementById('entriesList');
+            if (data.entries.length === 0) {
+                entriesList.innerHTML = '<div class="empty-state">Нет записей. Нажмите + чтобы добавить</div>';
+            } else {
+                entriesList.innerHTML = data.entries.map(entry => `
+                    <div class="entry-wrapper" data-id="${entry.id}">
+                        <div class="swipe-delete-bg">Удалить</div>
+                        <div class="entry-card" onclick="openEditModal(${entry.id})">
+                            <div class="entry-header">
+                                <div class="entry-firm">${escapeHtml(entry.firm)}</div>
+                                <div class="entry-amount">${entry.amount.toFixed(2)} zł</div>
+                            </div>
+                            <div class="entry-details">
+                                <span>⏱️ ${formatHours(entry.hours)}</span>
+                                <span>💵 ${(entry.amount / entry.hours).toFixed(2)} zł/ч</span>
+                                <span>📅 ${formatDate(entry.date)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                setupSwipeListeners();
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Open goal modal
+        function openGoalModal() {
+            tg.HapticFeedback.impactOccurred('light');
+            document.getElementById('goalInput').value = data.goal || '';
+            goalModal.classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        // Open add modal
+        function openAddModal() {
+            tg.HapticFeedback.impactOccurred('light');
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = 'Добавить запись';
+            document.getElementById('firmInput').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('hoursInput').value = '';
+            document.getElementById('minutesInput').value = '';
+            document.getElementById('deleteBtn').style.display = 'none';
+            entryModal.classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        // Open edit modal
+        function openEditModal(id) {
+            tg.HapticFeedback.impactOccurred('light');
+            const entry = data.entries.find(e => e.id === id);
+            if (!entry) return;
+
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Редактировать запись';
+            document.getElementById('firmInput').value = entry.firm;
+            document.getElementById('amountInput').value = entry.amount;
+            
+            const totalMinutes = Math.round(entry.hours * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            document.getElementById('hoursInput').value = hours;
+            document.getElementById('minutesInput').value = minutes;
+            document.getElementById('deleteBtn').style.display = 'block';
+            entryModal.classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        // Close modals
+        function closeModal(modal) {
+            tg.HapticFeedback.impactOccurred('light');
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-open');
+        }
+
+        // Handle goal form
+        goalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            tg.HapticFeedback.impactOccurred('medium');
+            
+            const goal = parseFloat(document.getElementById('goalInput').value);
+            if (goal > 0) {
+                data.goal = goal;
+                saveData();
+                closeModal(goalModal);
+                showToast('Цель установлена');
+            }
+        });
+
+        // Handle entry form
+        entryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            tg.HapticFeedback.impactOccurred('medium');
+            
+            const firm = document.getElementById('firmInput').value.trim();
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const hours = document.getElementById('hoursInput').value;
+            const minutes = document.getElementById('minutesInput').value;
+            const totalHours = parseTimeInput(hours, minutes);
+
+            if (currentEditId) {
+                const entry = data.entries.find(e => e.id === currentEditId);
+                if (entry) {
+                    entry.firm = firm;
+                    entry.amount = amount;
+                    entry.hours = totalHours;
+                }
+                showToast('Запись обновлена');
+            } else {
+                const newEntry = {
+                    id: Date.now(),
+                    firm,
+                    amount,
+                    hours: totalHours,
+                    date: new Date().toISOString()
+                };
+                data.entries.unshift(newEntry);
+                showToast('Запись добавлена');
+            }
+
+            saveData();
+            closeModal(entryModal);
+        });
+
+        // Delete entry
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            if (!currentEditId) return;
+            
+            tg.HapticFeedback.notificationOccurred('success');
+            data.entries = data.entries.filter(e => e.id !== currentEditId);
+            saveData();
+            closeModal(entryModal);
+            showToast('Запись удалена');
+        });
+
+        // Event listeners
+        addBtn.addEventListener('click', openAddModal);
+        document.getElementById('cancelBtn').addEventListener('click', () => closeModal(entryModal));
+        document.getElementById('cancelGoalBtn').addEventListener('click', () => closeModal(goalModal));
+
+        // Setup swipe listeners
+        function setupSwipeListeners() {
+            const wrappers = document.querySelectorAll('.entry-wrapper');
+            wrappers.forEach(wrapper => {
+                const card = wrapper.querySelector('.entry-card');
+                
+                card.addEventListener('touchstart', (e) => {
+                    swipeStartX = e.touches[0].clientX;
+                    swipeElement = wrapper;
+                }, { passive: true });
+
+                card.addEventListener('touchmove', (e) => {
+                    if (!swipeElement) return;
+                    
+                    const currentX = e.touches[0].clientX;
+                    const diff = swipeStartX - currentX;
+                    
+                    if (diff > 0 && diff < 80) {
+                        e.preventDefault();
+                        wrapper.classList.add('swiping');
+                    }
+                }, { passive: false });
+
+                card.addEventListener('touchend', (e) => {
+                    if (!swipeElement) return;
+                    
+                    const currentX = e.changedTouches[0].clientX;
+                    const diff = swipeStartX - currentX;
+                    
+                    if (diff > 60) {
+                        const id = parseInt(wrapper.dataset.id);
+                        tg.HapticFeedback.notificationOccurred('success');
+                        data.entries = data.entries.filter(e => e.id !== id);
+                        saveData();
+                        showToast('Запись удалена');
+                    } else {
+                        wrapper.classList.remove('swiping');
+                    }
+                    
+                    swipeElement = null;
+                });
+            });
+        }
+
+        // Initialize
+        loadData();
+
+        // Long press on goal to change
+        let pressTimer;
+        document.getElementById('goalDisplay').addEventListener('touchstart', () => {
+            pressTimer = setTimeout(() => {
+                openGoalModal();
+            }, 500);
+        });
+        document.getElementById('goalDisplay').addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        });
+    </script>
+</body>
+</html>
