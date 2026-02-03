@@ -30,7 +30,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             padding: 12px;
-            padding-top: 149px;
+            padding-top: 164px;
             padding-bottom: 71px;
             min-height: 100vh;
             overflow-x: hidden;
@@ -45,7 +45,7 @@
         }
 
         .spacer-top {
-            height: 85px;
+            height: 100px;
             width: 100%;
             position: fixed;
             top: 0;
@@ -57,7 +57,7 @@
 
         .top-panel {
             position: fixed;
-            top: 85px;
+            top: 100px;
             left: 0;
             right: 0;
             padding: 12px 16px;
@@ -466,6 +466,50 @@
             display: flex;
             gap: 8px;
         }
+
+        .spoiler-header {
+            background-color: var(--card-color);
+            padding: 14px;
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+        }
+
+        .spoiler-header:active {
+            transform: scale(0.98);
+        }
+
+        .spoiler-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .spoiler-arrow {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .spoiler-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .spoiler-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .spoiler-content.open {
+            max-height: 5000px;
+        }
     </style>
 </head>
 <body>
@@ -518,10 +562,6 @@
         </div>
     </div>
 
-    <div class="section-header" onclick="openGoalModal()">
-        🎯 <span>Установить цель</span>
-    </div>
-
     <div class="section-header">
         🏆 <span>Топ Компании</span>
     </div>
@@ -532,13 +572,18 @@
         </div>
     </div>
 
-    <div class="section-header">
-        📋 <span>Все записи</span>
+    <div class="spoiler-header" onclick="toggleSpoiler()">
+        <div class="spoiler-title">
+            📋 <span>Все записи</span>
+        </div>
+        <div class="spoiler-arrow" id="spoilerArrow">▼</div>
     </div>
-    <div class="entry-list" id="entryList">
-        <div class="empty-state">
-            <div class="empty-icon">📝</div>
-            <div>Нет записей</div>
+    <div class="spoiler-content" id="spoilerContent">
+        <div class="entry-list" id="entryList">
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div>Нет записей</div>
+            </div>
         </div>
     </div>
 
@@ -891,6 +936,13 @@
         document.getElementById('goalModal').addEventListener('click', (e) => {
             if (e.target.id === 'goalModal') closeGoalModal();
         });
+
+        function toggleSpoiler() {
+            const content = document.getElementById('spoilerContent');
+            const arrow = document.getElementById('spoilerArrow');
+            content.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
 
         init();
     </script>
