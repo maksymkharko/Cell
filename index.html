@@ -678,26 +678,41 @@
             if (window.Telegram?.WebApp) {
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
+                loadData();
+            } else {
+                updateUI();
             }
-            
-            loadData();
-            updateUI();
         }
 
         function loadData() {
-            const saved = localStorage.getItem('earningsData');
-            if (saved) {
-                const data = JSON.parse(saved);
-                entries = data.entries || [];
-                monthlyGoal = data.goal || null;
+            if (window.Telegram?.WebApp?.CloudStorage) {
+                Telegram.WebApp.CloudStorage.getItem('earningsData', (err, value) => {
+                    if (!err && value) {
+                        try {
+                            const data = JSON.parse(value);
+                            entries = data.entries || [];
+                            monthlyGoal = data.goal || null;
+                            updateUI();
+                        } catch (e) {
+                            console.error('Parse error:', e);
+                        }
+                    }
+                });
             }
         }
 
         function saveData() {
-            localStorage.setItem('earningsData', JSON.stringify({
-                entries: entries,
-                goal: monthlyGoal
-            }));
+            if (window.Telegram?.WebApp?.CloudStorage) {
+                const data = JSON.stringify({
+                    entries: entries,
+                    goal: monthlyGoal
+                });
+                Telegram.WebApp.CloudStorage.setItem('earningsData', data, (err, result) => {
+                    if (err) {
+                        console.error('Save error:', err);
+                    }
+                });
+            }
         }
 
         function updateUI() {
