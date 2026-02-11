@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
@@ -280,6 +281,7 @@
             from {
                 transform: translateY(100%);
             }
+
             to {
                 transform: translateY(0);
             }
@@ -424,6 +426,7 @@
                 transform: scale(0.9);
                 opacity: 0;
             }
+
             to {
                 transform: scale(1);
                 opacity: 1;
@@ -520,9 +523,10 @@
         }
     </style>
 </head>
+
 <body>
     <div class="spacer-top"></div>
-    
+
     <div class="top-panel">
         <div class="goal-info" onclick="openGoalModal()" style="cursor: pointer;">
             <span id="goalDisplay">Цель: <span class="goal-amount">Не установлена</span></span>
@@ -613,7 +617,8 @@
                     <label class="form-label">Время работы*</label>
                     <div class="time-input-group">
                         <input type="number" class="form-input" id="hoursInput" placeholder="Часы" min="0" required>
-                        <input type="number" class="form-input" id="minutesInput" placeholder="Минуты" min="0" max="59" value="0">
+                        <input type="number" class="form-input" id="minutesInput" placeholder="Минуты" min="0" max="59"
+                            value="0">
                     </div>
                 </div>
                 <div class="btn-group">
@@ -640,7 +645,8 @@
                     <label class="form-label">Время работы*</label>
                     <div class="time-input-group">
                         <input type="number" class="form-input" id="editHoursInput" placeholder="Часы" min="0" required>
-                        <input type="number" class="form-input" id="editMinutesInput" placeholder="Минуты" min="0" max="59" required>
+                        <input type="number" class="form-input" id="editMinutesInput" placeholder="Минуты" min="0"
+                            max="59" required>
                     </div>
                 </div>
                 <div class="btn-group">
@@ -765,9 +771,9 @@
             document.getElementById('daysLeft').textContent = daysLeft;
 
             if (monthlyGoal) {
-                document.getElementById('goalDisplay').innerHTML = 
+                document.getElementById('goalDisplay').innerHTML =
                     `Цель: <span class="goal-amount">${monthlyGoal.toFixed(2)} zł</span>`;
-                
+
                 const progress = Math.min(100, (totalEarnings / monthlyGoal) * 100);
                 document.getElementById('progressPercent').textContent = progress.toFixed(1) + '%';
                 document.getElementById('progressFill').style.width = progress + '%';
@@ -778,7 +784,7 @@
                 const perDay = daysLeft > 0 ? remaining / daysLeft : 0;
                 document.getElementById('perDay').textContent = perDay.toFixed(2) + ' zł/день';
             } else {
-                document.getElementById('goalDisplay').innerHTML = 
+                document.getElementById('goalDisplay').innerHTML =
                     'Цель: <span class="goal-amount">Не установлена</span>';
                 document.getElementById('progressPercent').textContent = '0%';
                 document.getElementById('progressFill').style.width = '0%';
@@ -791,13 +797,14 @@
             const companies = {};
             entries.forEach(e => {
                 if (!companies[e.company]) {
-                    companies[e.company] = 0;
+                    companies[e.company] = { earnings: 0, minutes: 0 };
                 }
-                companies[e.company] += e.earnings;
+                companies[e.company].earnings += e.earnings;
+                companies[e.company].minutes += (e.hours * 60) + e.minutes;
             });
 
             const sorted = Object.entries(companies)
-                .sort((a, b) => b[1] - a[1])
+                .sort((a, b) => b[1].earnings - a[1].earnings)
                 .slice(0, 5);
 
             const container = document.getElementById('topCompanies');
@@ -809,14 +816,18 @@
                     </div>
                 `;
             } else {
-                container.innerHTML = sorted.map(([name, earnings]) => `
+                container.innerHTML = sorted.map(([name, data]) => {
+                    const hours = data.minutes / 60;
+                    const rate = hours > 0 ? data.earnings / hours : 0;
+                    return `
                     <div class="company-card">
                         <div>
                             <div class="company-name">${name}</div>
+                            <div style="font-size: 13px; color: var(--hint-color); margin-top: 2px;">${rate.toFixed(2)} zł/ч</div>
                         </div>
-                        <div class="company-earnings">${earnings.toFixed(2)} zł</div>
+                        <div class="company-earnings">${data.earnings.toFixed(2)} zł</div>
                     </div>
-                `).join('');
+                `}).join('');
             }
         }
 
@@ -856,13 +867,13 @@
         function toggleEntryActions(index) {
             const actionsEl = document.getElementById(`actions-${index}`);
             const allActions = document.querySelectorAll('.entry-actions');
-            
+
             allActions.forEach((el, i) => {
                 if (i !== index) {
                     el.classList.remove('active');
                 }
             });
-            
+
             actionsEl.classList.toggle('active');
         }
 
@@ -999,4 +1010,5 @@
         init();
     </script>
 </body>
+
 </html>
